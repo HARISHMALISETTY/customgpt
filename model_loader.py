@@ -1,24 +1,19 @@
-# model_loader.py
-
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from config import MODEL_NAME
-
 
 def load_model():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+    MODEL_NAME = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+
+    # CPU-only safe loading for HuggingFace Spaces
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
-        dtype=dtype,
+        torch_dtype=torch.float32,    # MUST use float32 on CPU
+        low_cpu_mem_usage=True
     )
-    model.to(device)
-    model.eval()
 
-    # Ensure pad token exists
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    device = torch.device("cpu")
+    model.to(device)
 
     return tokenizer, model, device
